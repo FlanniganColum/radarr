@@ -1,0 +1,29 @@
+---
+- name: determine available groups
+  getent:
+    database: group
+
+- name: determine available users
+  getent:
+    database: passwd
+
+- name: "Linux | Adding radarr group"
+  group:
+    name: "{{ radarr_group_name }}"
+    state: present
+    gid: "{{ radarr_group_gid }}"
+  when: "radarr_group_name not in ansible_facts.getent_group"
+
+- name: "Linux | Adding radarr user"
+  user:
+    name: "{{ radarr_user_name }}"
+    group: "{{ radarr_group_name }}"
+    comment: "Radarr Service Account"
+    shell: /sbin/nologin
+    state: present
+    system: True
+    create_home: True
+    home: "/home/{{ radarr_user_name }}"
+    uid: "{{ radarr_user_uid }}"
+  when: "radarr_user_name not in ansible_facts.getent_passwd"
+

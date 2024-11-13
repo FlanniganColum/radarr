@@ -1,0 +1,21 @@
+[Unit]
+Description=Radarr Daemon
+After=syslog.target network.target
+
+[Service]
+# Change the user and group variables here.
+User={{ radarr_user_name }}
+Group={{ radarr_group_name }}
+
+Type=simple
+ExecStart={{ radarr_installation_directory }}/Radarr -nobrowser
+TimeoutStopSec=20
+KillMode=process
+Restart=on-failure
+
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=4
+
+[Install]
+WantedBy=multi-user.target

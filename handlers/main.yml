@@ -1,0 +1,27 @@
+---
+# handlers file for radarr
+
+- name: "Linux | restart radarr"
+  service:
+    name: "{{ radarr_service_name }}"
+    state: restarted
+    enabled: no
+  when:
+    - ansible_os_family != "Windows" and ansible_os_family != "Darwin"
+
+- name: "Linux | stop radarr"
+  service:
+    name: "{{ radarr_service_name }}"
+    state: stopped
+    enabled: no
+  when:
+    - ansible_os_family != "Windows" and ansible_os_family != "Darwin"
+
+- name: "Linux | start radarr"
+  service:
+    name: "{{ radarr_service_name }}"
+    state: started
+    enabled: no
+  when:
+    - ansible_os_family != "Windows" and ansible_os_family != "Darwin"
+

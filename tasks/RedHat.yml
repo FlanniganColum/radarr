@@ -1,0 +1,44 @@
+# tasks file for radarr on RedHat
+
+# Recycle Disk
+- name: "RedHat | Create a volume group for {{ radarr_recycle_vg_name }}"
+  lvg:
+    vg: "{{ radarr_recycle_vg_name }}"
+    pvs: "{{ radarr_recycle_disk }}"
+  when: "ansible_lvm['vgs'][radarr_recycle_vg_name] is not defined"
+
+- name: "RedHat | Create a logical volume for {{ radarr_recycle_lvm_name }}"    
+  lvol: 
+    vg: "{{ radarr_recycle_vg_name }}"
+    lv: "{{ radarr_recycle_lvm_name }}"
+    size: "{{ radarr_recycle_lvm_size }}"
+  when: "ansible_lvm['lvs'][radarr_recycle_lvm_name] is not defined"
+
+- name: "RedHat | Create directory "    
+  file: 
+    state: directory
+    path: "{{ radarr_recycle_directory_name }}"
+    mode: "{{ radarr_recycle_directory_mode }}"
+    group: "{{ radarr_group_name }}"
+    owner: "{{ radarr_user_name }}"
+
+- name: "RedHat | Format the filesystem for /dev/mapper/{{ radarr_recycle_vg_name }}-{{ radarr_recycle_lvm_name }}"    
+  filesystem:
+    fstype: "{{ radarr_recycle_disk_format }}"
+    dev: "/dev/mapper/{{ radarr_recycle_vg_name }}-{{ radarr_recycle_lvm_name }}"
+
+- name: "RedHat | Mount the lv on {{ radarr_recycle_directory_name }}"  
+  mount: 
+    path: "{{ radarr_recycle_directory_name }}"  
+    src: "/dev/mapper/{{ radarr_recycle_vg_name }}-{{ radarr_recycle_lvm_name }}"
+    fstype: "{{ radarr_recycle_disk_format }}"
+    state: mounted    
+
+- name: "RedHat | Change ownership after mounting "
+  file:
+    state: directory
+    path: "{{ radarr_recycle_directory_name }}"
+    mode: "{{ radarr_recycle_directory_mode }}"
+    group: "{{ radarr_group_name }}"
+    owner: "{{ radarr_user_name }}"
+

@@ -1,0 +1,85 @@
+---
+# tasks file for radarr
+# Accounts
+- name: "Linux | Create Accounts (Linux)"
+  include_tasks: "accounts.yml"
+  when:
+    - (ansible_os_family != "Windows" and ansible_os_family != "Darwin")
+
+- name: "Include OS-specific variables"
+  include_vars: "{{ ansible_os_family }}.yml"
+
+- name: "Include OS-specific tasks"
+  include_tasks: "{{ ansible_os_family }}.yml"
+
+  # Check if nzbget file exists
+- name: "Check if /tmp/radarr-{{radarr_version }}.tar.gz exists"
+  stat:
+    path: "/tmp/radarr-{{ radarr_version }}.tar.gz"
+  register: radarr_download_file
+
+- name: "Check if {{ radarr_installation_directory }}/Radarr exists"
+  stat:
+    path: "{{ radarr_installation_directory }}/Radarr"
+  register: radarr_app_file    
+
+# Create directory
+- name: "Linux | Create Radarr application directory"
+  ansible.builtin.file:
+    path: "{{ radarr_installation_directory }}"
+    state: directory
+    recurse: yes
+    owner: "{{ radarr_user_name }}"
+    group: "{{ radarr_group_name }}"
+
+# Download radarr from git
+- name: "Linux | Downloading tar.gz file from {{ radarr_git_url_release }}"
+  get_url:                                                           
+    url: "{{ radarr_git_url_release }}"                       
+    dest: "/tmp/radarr-{{ radarr_version }}.tar.gz"
+  when: not radarr_download_file.stat.exists    
+
+- name: "Linux | Extract /tmp/radarr-{{ radarr_version }}.tar.gz into /opt/Radarr"
+  ansible.builtin.unarchive:
+    src: "/tmp/radarr-{{ radarr_version }}.tar.gz"
+    dest: "{{ radarr_installation_directory }}"
+    remote_src: yes
+    extra_opts: 
+     - --strip-components=1
+  when: not radarr_app_file.stat.exists     
+
+
+- name: "Linux | Set permissions after unarchive "
+  ansible.builtin.file:
+    path: "{{ radarr_installation_directory }}"
+    state: directory
+    recurse: yes
+    owner: "{{ radarr_user_name }}"
+    group: "{{ radarr_group_name }}"
+
+#- name: "Linux | Create symlink for radarr version to main folder"
+#  ansible.builtin.file:
+#    src: "{{ radarr_installation_directory }}-{{ radarr_version }}"
+#    dest: "{{ radarr_installation_directory }}"
+#    owner: "{{ radarr_user_name }}"
+#    group: "{{ radarr_group_name }}"
+#    state: link    
+
+# Create service file
+- name: "Linux | Add Raddar service file"
+  ansible.builtin.template:
+    src: "radarr.service.j2"
+    dest: "/usr/lib/systemd/system/radarr.service"
+    owner: root
+    group: root
+    mode: '0644'
+
+# Service
+- name: "Linux | radarr services"
+  service:
+    name: "{{ radarr_service_name }}"
+    state: started
+    enabled: yes
+  tags:
+    - init
+    - service
